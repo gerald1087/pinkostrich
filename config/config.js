@@ -1,7 +1,6 @@
 require('dotenv').config()
 
 module.exports = {
-  
   development: {
     username: process.env.DB_USER,
     password: null,
@@ -10,7 +9,6 @@ module.exports = {
     dialect: 'postgres',
     operatorsAliases: false
   },
-  
   test: {
     username: 'root',
     password: null,
@@ -19,7 +17,6 @@ module.exports = {
     dialect: 'postgres',
     operatorsAliases: false
   },
-  
   production: {
     username: 'root',
     password: null,
@@ -28,5 +25,4 @@ module.exports = {
     dialect: 'postgres',
     operatorsAliases: false
   },
-  
 }
