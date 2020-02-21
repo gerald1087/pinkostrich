@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const config = {
-    
+
     host: process.env.DB_HOST,
     port: 5432,
     database: process.env.DB_NAME,
@@ -13,6 +13,9 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const Sequelize = require('sequelize')
 const router = express.Router();
+const pgp = require('pg-promise')();
+const db = pgp(config);
+const bodyParser = require('body-parser');
 
 const ProductsModel = require('./models/products');
 const UsersModel = require('./models/users');
@@ -46,15 +49,17 @@ const app = express();
 
 app.use(express.static('public'));
 app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
 
 
-
+//REGISTRATION ************
 // router.get('/register', function(req, res) {
     app.post('/api/register', function (req, res) {
     
         let data = {
-            name: req.body.name.trim(),
+            name: req.body.name,
             email: req.body.email.toLowerCase().trim(),
             password: req.body.password,
             is_admin: req.body.is_admin,
@@ -82,14 +87,78 @@ app.use(cors());
         }
         res.redirect('/register')
     });
-// })
+//LOGIN ************
+
+//ORDERS ***********
+// Get All orders 
+app.get('/api/orders', function (req, res) {
+    Orders.findAll().then((results) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    }).catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving orders');
+    })
+});
+//Get all orders for one user *NOT YET WORKING
+app.get('/api/users/orders/:id', function(req, res) {
+  let id = req.params.id;
+    Orders.query('SELECT * FROM orders JOIN users on orders.user_id = users.id WHERE users.id=$1', [id])
+     .then(results => {
+        res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify(results));
+               })
+    .catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving info on group');
+    })
+});
+
+//GET single order for a single user (join with products.id and users.id)
 
 
+//USERS *******
+//GET all users
+app.get('/api/users', function (req, res) {
+    Users.findAll().then((results) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    }).catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving users');
+    })
+});
+//GET user profile info
+//POST user profile info
+//PUT/update user profile info?
+//Delete user profile
 
 
-
-
-
+//CATEGORIES *************
+//GET all categories
+app.get('/api/catgeories', function (req, res) {
+    Categories.findAll().then((results) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    }).catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving categories');
+    })
+});
+//GET all products
+app.get('/api/products', function (req, res) {
+    Products.findAll().then((results) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    }).catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving users');
+    })
+});
+//PRODUCTS ****************
+//(Admin) Post a product
+//(Admin) PUT/update a product
+//(Admin) Delete a product
 
 app.listen(3001);
 console.log('Ostrich is ready');
