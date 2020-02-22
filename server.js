@@ -89,8 +89,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
     });
 //LOGIN ************
 
+
+
 //ORDERS ***********
-// Get All orders 
+// Get All orders /working
 app.get('/api/orders', function (req, res) {
     Orders.findAll().then((results) => {
         res.setHeader('Content-Type', 'application/json');
@@ -100,10 +102,10 @@ app.get('/api/orders', function (req, res) {
         res.status(434).send('error retrieving orders');
     })
 });
-//Get all orders for one user *NOT YET WORKING
+//Get all orders for one user /WORKING
 app.get('/api/users/orders/:id', function(req, res) {
   let id = req.params.id;
-    Orders.query('SELECT * FROM orders JOIN users on orders.user_id = users.id WHERE users.id=$1', [id])
+    db.query('SELECT * FROM orders JOIN users on orders.user_id = users.id WHERE users.id= orders.user_id')
      .then(results => {
         res.setHeader('Content-Type', 'application/json');
                   res.end(JSON.stringify(results));
@@ -114,11 +116,47 @@ app.get('/api/users/orders/:id', function(req, res) {
     })
 });
 
-//GET single order for a single user (join with products.id and users.id)
-
+//GET single order for a single user /working
+app.get('/api/users/:id', function(req, res) {
+    let id = req.params.id;
+      db.query('SELECT * FROM orders JOIN users on orders.user_id = users.id WHERE users.id= orders.user_id', [id])
+      
+       .then(results => {
+          res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(results));
+                 })
+      .catch(function (e) {
+          console.log(e);
+          res.status(434).send('error retrieving info on group');
+      })
+  });
+//ORDER_PRODUCTS *********
+//GET all product orders /working
+app.get('/api/orderproduct', function (req, res) {
+    OrderProduct.findAll().then((results) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    }).catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving orders');
+    })
+});
+//GET single product order for a single user /working ~maybe will need tables with info to confim=rm
+app.get('/api/orders/orderproduct/:id', function(req, res) {
+    let id = req.params.id;
+      db.query('SELECT ord.user_id, ord.id, ord.order_date,ord.order_status FROM orders AS ORD RIGHT JOIN order_products as OP ON ORD.order_products_id = OP.id RIGHT JOIN products ON OP.product_id = products.id', [id])
+       .then(results => {
+          res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(results));
+                 })
+      .catch(function (e) {
+          console.log(e);
+          res.status(434).send('error retrieving info on group');
+      })
+  });
 
 //USERS *******
-//GET all users
+//GET all users /working
 app.get('/api/users', function (req, res) {
     Users.findAll().then((results) => {
         res.setHeader('Content-Type', 'application/json');
@@ -128,37 +166,202 @@ app.get('/api/users', function (req, res) {
         res.status(434).send('error retrieving users');
     })
 });
-//GET user profile info
-//POST user profile info
-//PUT/update user profile info?
-//Delete user profile
+//GET a single user /working
+app.get('/api/users/:id', function (req, res) {
+    let id = req.params.id;
+    db.one("SELECT * FROM posts users id=$1", [id])
+        .then((results) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(results));
+        })
+        .catch((e) => {
+            console.error(e);
+        });
+});
+//GET user profile info needed?
 
+//POST user profile info 
+//not working/incomplete
+app.post('/api/users/:id', function (req, res) {
+    let id = req.params.id;
+    let data = {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.user_id,
+        address_line1: req.body.address_line1,
+        address_line2: req.body.address_line2,
+        city: req.body.city,
+        state: req.body.state,
+        zip: req.body.zip
+    };
+    let query = "INSERT INTO users(name, email, password, address_line1, address_line2, city, state, zip) VALUES (${name}, ${email}, ${password}, ${address_line1}, ${address_line2}, ${city}, ${state}, ${zip}) RETURNING id";
+    db.one(query, data)
+        .then((result) => {
+            db.one("SELECT * FROM users WHERE id=$1", [result.id]) 
+                .then((results) => {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(results));
+                })
+                .catch((e) => {
+                    console.error(e);
+                });
+        })
+        .catch((e) => {
+            console.error(e);
+        });
+});
 
-//CATEGORIES *************
-//GET all categories
-app.get('/api/catgeories', function (req, res) {
-    Categories.findAll().then((results) => {
+// //Update user profile info? 
+//Not working/Incomplete
+app.put('/api/users/:id', function (req, res) {
+    let id = req.params.id;
+    let data = {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.user_id,
+        address_line1: req.body.address_line1,
+        address_line2: req.body.address_line2,
+        city: req.body.city,
+        state: req.body.state,
+        zip: req.body.zip
+    };
+    let query = "UPDATE users SET name=${name}, email=${email},password=${password}, address_line1=${address_line1},address_line2=${address_line2},city=${city},state=${state},zip=${zip} WHERE id=${id}";
+    db.one(query, data)
+        .then((result) => {
+            db.one(query, data)
+                .then((result) => {
+                    db.one("SELECT * FROM users WHERE id=$1", [result.id])
+                        .then((results) => {
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify(results));
+                        })
+                        .catch((e) => {
+                            console.error(e);
+                        });
+                })
+                .catch((e) => {
+                    console.error(e);
+                });
+        })
+        .catch((e) => {
+            console.error(e);
+        });
+});
+//Delete user profile //working
+app.delete('/api/delete_user', function (req, res) {
+    let data = {
+        id: req.body.id
+    };
+    Users.destroy({ where: { id: data.id } }).then(function (group) {
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(results));
+        res.end(JSON.stringify(group));
     }).catch(function (e) {
-        console.log(e);
-        res.status(434).send('error retrieving categories');
+        res.status(434).send('unable to delete user')
     })
 });
-//GET all products
+
+//CATEGORIES *************
+//GET all categories /working
+app.get('/api/category', function (req, res) {
+    db.query('SELECT * FROM categories')
+        .then((results) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(results));
+        })
+        .catch((e) => {
+            console.error(e);
+        });
+});
+//CREATE/post a Category
+
+//UPDATE/put a Category
+
+//Delete a Category /working
+app.delete('/api/deletecategory', function (req, res) {
+    let data = {
+        id: req.body.id
+    };
+    Category.destroy({ where: { id: data.id } }).then(function (group) {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(group));
+    }).catch(function (e) {
+        res.status(434).send('unable to delete category')
+    })
+});
+//GET all products /working
 app.get('/api/products', function (req, res) {
     Products.findAll().then((results) => {
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(results));
     }).catch(function (e) {
         console.log(e);
-        res.status(434).send('error retrieving users');
+        res.status(434).send('error retrieving orders');
     })
 });
-//PRODUCTS ****************
-//(Admin) Post a product
+//GET single product /working
+app.get('/api/products/:id', function (req, res) {
+    let id = req.params.id;
+    db.one("SELECT * FROM products product id=$1", [id])
+        .then((results) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(results));
+        })
+        .catch((e) => {
+            console.error(e);
+        });
+});
+//ADMIN PRODUCTS ****************
+//(Admin) Post a product /Gerald has this
+
 //(Admin) PUT/update a product
-//(Admin) Delete a product
+//incomplete
+app.put('/api/products/:id', function (req, res) {
+    let id = req.params.id;
+    let data = {
+        id: id,
+        name: req.body.name,
+        category: req.body.category,
+        price: req.body.price,
+        description: req.body.description,
+        available_quantity: req.body.available_quantity,
+        image: req.body.image
+    };
+    let query = "UPDATE products SET name=${name}, category=${category}, price=${price}, description=${description}, available_quantity=${available_quantity}, image=${image} WHERE id=${id}";
+    db.one(query, data)
+        .then((result) => {
+            db.one(query, data)
+                .then((result) => {
+                    //need to finish sql
+                    db.one("SELECT * FROM products JOIN categories ? ......ON posts.user_id=users.id WHERE posts.id=$1", [result.id])
+                        .then((results) => {
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify(results));
+                        })
+                        .catch((e) => {
+                            console.error(e);
+                        });
+                })
+                .catch((e) => {
+                    console.error(e);
+                });
+        })
+        .catch((e) => {
+            console.error(e);
+        });
+});
+
+//(Admin) Delete a product /working
+app.delete('/api/deleteproduct', function (req, res) {
+    let data = {
+        id: req.body.id
+    };
+    Products.destroy({ where: { id: data.id } }).then(function (group) {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(group));
+    }).catch(function (e) {
+        res.status(434).send('unable to delete product')
+    })
+});
 
 app.listen(3001);
 console.log('Ostrich is ready');
