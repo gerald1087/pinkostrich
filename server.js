@@ -130,6 +130,25 @@ app.get('/api/users/:id', function(req, res) {
           res.status(434).send('error retrieving info on group');
       })
   });
+// Create an ORDER NOT WORKING
+app.post('/api/orders', function (req, res) {
+    let data = {
+        user_id: req.body.user_id,
+    };
+    if(data.user_id) {
+        Orders.create(data).then(function (post) {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(post));
+            console.log ("NEW order created") 
+        }).catch(function(e){
+            res.status(434).send('Unable to create  an order')
+        });
+    } else {
+    res.status(434).send('Need to be logged in to create an order')
+    }
+    
+});
+
 //ORDER_PRODUCTS *********
 //GET all product orders /working
 app.get('/api/orderproduct', function (req, res) {
@@ -142,10 +161,10 @@ app.get('/api/orderproduct', function (req, res) {
     })
 });
 //GET single product order for a single user /working ~maybe will need tables with info to confim=rm
-app.get('/api/orders/orderproduct/:id', function(req, res) {
+app.get('/api/order_producs/orders/:id', function(req, res) {
     let id = req.params.id;
-      db.query('SELECT ord.user_id, ord.id, ord.order_date,ord.order_status FROM orders AS ORD RIGHT JOIN order_products as OP ON ORD.order_products_id = OP.id RIGHT JOIN products ON OP.product_id = products.id', [id])
-       .then(results => {
+      db.query('SELECT * FROM order_products JOIN orders on order_products.order_id = orders.id', [id])
+      .then(results => {
           res.setHeader('Content-Type', 'application/json');
                     res.end(JSON.stringify(results));
                  })
@@ -154,6 +173,24 @@ app.get('/api/orders/orderproduct/:id', function(req, res) {
           res.status(434).send('error retrieving info on group');
       })
   });
+//Create Product Order /working
+app.post('/api/orderproduct', function (req, res) {
+    let data = {
+        order_id: req.body.order_id,
+        product_id: req.body.product_id,
+        quantity: req.body.quantity
+    };
+    if(data.order_id && data.product_id && data.quantity) {
+        OrderProduct.create(data).then(function (post) {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(post));
+        }).catch(function(e){
+            res.status(434).send('Unable to create the an order')
+        });
+    } else {
+    res.status(434).send('Need to add quantity that is available in order to create an order')
+    }
+});
 
 //USERS *******
 //GET all users /working
@@ -178,44 +215,15 @@ app.get('/api/users/:id', function (req, res) {
             console.error(e);
         });
 });
-//GET user profile info needed?
+//GET user profile info needed? same as above?
 
-//POST user profile info 
-//not working/incomplete
-app.post('/api/users/:id', function (req, res) {
-    let id = req.params.id;
-    let data = {
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.user_id,
-        address_line1: req.body.address_line1,
-        address_line2: req.body.address_line2,
-        city: req.body.city,
-        state: req.body.state,
-        zip: req.body.zip
-    };
-    let query = "INSERT INTO users(name, email, password, address_line1, address_line2, city, state, zip) VALUES (${name}, ${email}, ${password}, ${address_line1}, ${address_line2}, ${city}, ${state}, ${zip}) RETURNING id";
-    db.one(query, data)
-        .then((result) => {
-            db.one("SELECT * FROM users WHERE id=$1", [result.id]) 
-                .then((results) => {
-                    res.setHeader('Content-Type', 'application/json');
-                    res.end(JSON.stringify(results));
-                })
-                .catch((e) => {
-                    console.error(e);
-                });
-        })
-        .catch((e) => {
-            console.error(e);
-        });
-});
+//POST user profile info //register
 
-// //Update user profile info? 
-//Not working/Incomplete
+// //Update user profile info /working
 app.put('/api/users/:id', function (req, res) {
     let id = req.params.id;
     let data = {
+        id: id,
         name: req.body.name,
         email: req.body.email,
         password: req.body.user_id,
@@ -225,12 +233,10 @@ app.put('/api/users/:id', function (req, res) {
         state: req.body.state,
         zip: req.body.zip
     };
-    let query = "UPDATE users SET name=${name}, email=${email},password=${password}, address_line1=${address_line1},address_line2=${address_line2},city=${city},state=${state},zip=${zip} WHERE id=${id}";
+    let query = "UPDATE users SET name=${name},email=${email},password=${password},address_line1=${address_line1},address_line2=${address_line2},city=${city},state=${state},zip=${zip} WHERE id=${id}";
     db.one(query, data)
         .then((result) => {
-            db.one(query, data)
-                .then((result) => {
-                    db.one("SELECT * FROM users WHERE id=$1", [result.id])
+                    db.one("SELECT * FROM users WHERE categories.id=$1", [result.id])
                         .then((results) => {
                             res.setHeader('Content-Type', 'application/json');
                             res.end(JSON.stringify(results));
@@ -242,11 +248,9 @@ app.put('/api/users/:id', function (req, res) {
                 .catch((e) => {
                     console.error(e);
                 });
-        })
-        .catch((e) => {
-            console.error(e);
-        });
-});
+       });
+
+
 //Delete user profile //working
 app.delete('/api/delete_user', function (req, res) {
     let data = {
@@ -259,7 +263,6 @@ app.delete('/api/delete_user', function (req, res) {
         res.status(434).send('unable to delete user')
     })
 });
-
 //CATEGORIES *************
 //GET all categories /working
 app.get('/api/category', function (req, res) {
@@ -272,10 +275,49 @@ app.get('/api/category', function (req, res) {
             console.error(e);
         });
 });
-//CREATE/post a Category
+//CREATE/post a Category /working
+app.post('/api/categories', function (req, res) {
+    let data = {
+        name: req.body.name
+    };
+    if(data.name) {
+        Categories.create(data).then(function (post) {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(post));
+        }).catch(function(e){
+            res.status(434).send('Unable to create the category')
+        });
+    } else {
+    res.status(434).send('Category name is required to making a post')
+    }
+});
 
-//UPDATE/put a Category
+//UPDATE/PUT a Category /working!
+app.put('/api/categories/:id', function (req, res) {
+    let id = req.params.id;
+    let data = { 
+        id: id,
+        name: req.body.name
+    };
+    let query = "UPDATE categories SET name=${name}  WHERE id=${id}";
 
+    db.one(query, data)
+        .then((result) => {
+
+            db.one("SELECT * FROM catgeories WHERE catgeories.id=$1", [result.id])
+                .then((results) => {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(results))
+                })
+                .catch((e) => {
+                    console.error(e);
+                });
+
+        })
+        .catch((e) => {
+            console.error(e);
+        });
+});
 //Delete a Category /working
 app.delete('/api/deletecategory', function (req, res) {
     let data = {
@@ -313,8 +355,7 @@ app.get('/api/products/:id', function (req, res) {
 //ADMIN PRODUCTS ****************
 //(Admin) Post a product /Gerald has this
 
-//(Admin) PUT/update a product
-//incomplete
+//(Admin) PUT/update a product /looks to be working
 app.put('/api/products/:id', function (req, res) {
     let id = req.params.id;
     let data = {
@@ -326,13 +367,10 @@ app.put('/api/products/:id', function (req, res) {
         available_quantity: req.body.available_quantity,
         image: req.body.image
     };
-    let query = "UPDATE products SET name=${name}, category=${category}, price=${price}, description=${description}, available_quantity=${available_quantity}, image=${image} WHERE id=${id}";
+    let query = "UPDATE products SET name=${name},category=${category},price=${price},description=${description},available_quantity=${available_quantity},image=${image} WHERE id=${id}";
     db.one(query, data)
         .then((result) => {
-            db.one(query, data)
-                .then((result) => {
-                    //need to finish sql
-                    db.one("SELECT * FROM products JOIN categories ? ......ON posts.user_id=users.id WHERE posts.id=$1", [result.id])
+                    db.one("SELECT * FROM products JOIN categories ON products.category = categories.name", [result.id])
                         .then((results) => {
                             res.setHeader('Content-Type', 'application/json');
                             res.end(JSON.stringify(results));
@@ -344,11 +382,7 @@ app.put('/api/products/:id', function (req, res) {
                 .catch((e) => {
                     console.error(e);
                 });
-        })
-        .catch((e) => {
-            console.error(e);
-        });
-});
+            })
 
 //(Admin) Delete a product /working
 app.delete('/api/deleteproduct', function (req, res) {
@@ -364,4 +398,4 @@ app.delete('/api/deleteproduct', function (req, res) {
 });
 
 app.listen(3001);
-console.log('Ostrich is ready');
+console.log('Ostrich is hungry and running, fast');
