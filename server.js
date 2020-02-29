@@ -130,7 +130,7 @@ app.get('/api/users/:id', function(req, res) {
           res.status(434).send('error retrieving info on group');
       })
   });
-// Create an ORDER NOT WORKING
+// Create an ORDER /WORKING
 app.post('/api/orders', function (req, res) {
     let data = {
         user_id: req.body.user_id,
