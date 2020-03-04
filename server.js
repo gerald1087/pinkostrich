@@ -16,6 +16,9 @@ const router = express.Router();
 const pgp = require('pg-promise')();
 const db = pgp(config);
 const bodyParser = require('body-parser');
+const passport = require('passport')
+const GitHubStrategy = require('passport-github').Strategy;
+const session = require('express-session');
 
 const ProductsModel = require('./models/products');
 const UsersModel = require('./models/users');
@@ -89,6 +92,88 @@ app.use(bodyParser.urlencoded({ extended: false }));
     });
 //LOGIN ************
 
+passport.use(new GitHubStrategy({
+    clientID: d0465dfe89ce6a44625b,
+    clientSecret: b0d9be600d8e6c5860f64fa833aad81a18788c5e,
+    callbackURL: "http://127.0.0.1:3000/auth/github/callback"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    User.findOrCreate({ githubId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
+app.get('/auth/github',
+  passport.authenticate('github'));
+
+app.get('/auth/github/callback', 
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
+
+  //session
+  app.use(session({secret: 'ssshhhhh'}));
+
+  var sess;
+app.get('/',function(req,res){
+    sess=req.session;
+    sess.email; 
+    
+});
+router.get('/',(req,res) => {
+    sess = req.session;
+    if(sess.email) {
+        return res.redirect('/admin');
+    }
+    res.sendFile('index.html');
+});
+
+router.post('/login',(req,res) => {
+    sess = req.session;
+    sess.email = req.body.email;
+    res.end('done');
+});
+
+router.get('/admin',(req,res) => {
+    sess = req.session;
+    if(sess.email) {
+        res.write(`<h1>Hello ${sess.email} </h1><br>`);
+        res.end('<a href='+'/logout'+'>Logout</a>');
+    }
+    else {
+        res.write('<h1>Please login first.</h1>');
+        res.end('<a href='+'/'+'>Login</a>');
+    }
+});
+
+router.get('/logout',(req,res) => {
+    req.session.destroy((err) => {
+        if(err) {
+            return console.log(err);
+        }
+        res.redirect('/');
+    });
+
+});
+
+app.use('/', router);
+let run =function(){
+    var email,pass;
+    $("#submit").click(function(){
+        email=$("#email").val();
+        pass=$("#password").val();
+        /*
+        * Perform some validation here.
+        */
+        $.post("/login",{email:email,pass:pass},function(data){
+            if(data==='done') {
+                window.location.href="/landing";
+            }
+        });
+    });
+};
 
 
 //ORDERS ***********
