@@ -98,6 +98,29 @@ app.get('/api/users/:id', function (req, res) {
     })
 });
 
+app.delete('/api/deleteprofile/:id', (req, res) => {
+
+let userId = req.params.id
+
+// let id = users.filter(user => {
+//     return user.id == userId;
+// }) [0];
+
+// const index = users.indexOf(id)
+
+// users.splice(index, 1);
+// res.json({message: `User ${userID} deleted`});
+
+    Users.destroy({ where: { id: userId } }).then(function (user) {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(user));
+    }).catch(function (e) {
+        console.log(e, "server error message")
+        res.status(434).send('unable to delete user')
+    })
+
+});
+
 app.post('/api/products', function (req, res) {
     
     let data = {
@@ -118,7 +141,37 @@ app.post('/api/products', function (req, res) {
 
 });
 
+app.post('/api/orders', function (req, res) {
+    
+    let data = {
+        user_id: req.body.user_id,
+        order_date: req.body.order_date,
+        order_status: req.body.order_status
+    };
+    
+    Orders.create(data).then(function (product) {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(product));
+    }).catch(function (e) {
+        res.status(434).send('unable to list product')
+    })
 
+});
+
+app.get('/api/orders', function (req, res) {
+
+    let id = req.params.id;
+    db.query('SELECT * FROM orders JOIN users on orders.user_id = users.id WHERE users.id= orders.user_id')
+     .then(results => {
+        res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify(results));
+               })
+    .catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving orders');
+    })
+
+});
 
 
 
