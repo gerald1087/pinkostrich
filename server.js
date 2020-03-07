@@ -216,34 +216,11 @@ app.get('/api/orders', function (req, res) {
         }
         
     });
-//LOGIN ************
 
-passport.use(new GitHubStrategy({
-    clientID: d0465dfe89ce6a44625b,
-    clientSecret: b0d9be600d8e6c5860f64fa833aad81a18788c5e,
-    callbackURL: "http://127.0.0.1:3000/auth/github/callback"
-  },
-  function(accessToken, refreshToken, profile, cb) {
-    User.findOrCreate({ githubId: profile.id }, function (err, user) {
-      return cb(err, user);
-    });
-  }
-));
-app.get('/auth/github',
-  passport.authenticate('github'));
-
-app.get('/auth/github/callback', 
-  passport.authenticate('github', { failureRedirect: '/login' }),
-  function(req, res) {
-    // Successful authentication, redirect home.
-    res.redirect('/');
-  });
-
-  //session
-  app.use(session({secret: 'ssshhhhh'}));
-
-app.post('/api/login', function (req, res) {
     
+//LOGIN ************
+app.post('/api/login', function (req, res) {
+
     let email = req.body.email;
     let password = req.body.password;
     console.log(email)
@@ -271,52 +248,108 @@ app.post('/api/login', function (req, res) {
         res.status(434).send('Both email and password is required to login')
     }
     
-});
-
-router.post('/login',(req,res) => {
-    sess = req.session;
-    sess.email = req.body.email;
-    res.end('done');
-});
-
-router.get('/admin',(req,res) => {
-    sess = req.session;
-    if(sess.email) {
-        res.write(`<h1>Hello ${sess.email} </h1><br>`);
-        res.end('<a href='+'/logout'+'>Logout</a>');
-    }
-    else {
-        res.write('<h1>Please login first.</h1>');
-        res.end('<a href='+'/'+'>Login</a>');
-    }
-});
-
-router.get('/logout',(req,res) => {
-    req.session.destroy((err) => {
-        if(err) {
-            return console.log(err);
-        }
-        res.redirect('/');
     });
+    
+//passport LOGIN BELOW
+// passport.use(new GitHubStrategy({
+//     clientID: d0465dfe89ce6a44625b,
+//     clientSecret: b0d9be600d8e6c5860f64fa833aad81a18788c5e,
+//     callbackURL: "http://127.0.0.1:3000/auth/github/callback"
+//   },
+//   function(accessToken, refreshToken, profile, cb) {
+//     User.findOrCreate({ githubId: profile.id }, function (err, user) {
+//       return cb(err, user);
+//     });
+//   }
+// ));
+// app.get('/auth/github',
+//   passport.authenticate('github'));
 
-});
+// app.get('/auth/github/callback', 
+//   passport.authenticate('github', { failureRedirect: '/login' }),
+//   function(req, res) {
+//     // Successful authentication, redirect home.
+//     res.redirect('/');
+//   });
 
-app.use('/', router);
-let run =function(){
-    var email,pass;
-    $("#submit").click(function(){
-        email=$("#email").val();
-        pass=$("#password").val();
-        /*
-        * Perform some validation here.
-        */
-        $.post("/login",{email:email,pass:pass},function(data){
-            if(data==='done') {
-                window.location.href="/landing";
-            }
-        });
-    });
-};
+//   //session
+//   app.use(session({secret: 'ssshhhhh'}));
+
+// app.post('/api/login', function (req, res) {
+    
+//     let email = req.body.email;
+//     let password = req.body.password;
+//     console.log(email)
+//     if (email && password) {
+//         Users.findOne({
+//             where: {
+//                 email: email
+//             },
+//         }).then((results) => {
+//             console.log(results)
+//             bcrypt.compare(password, results.password).then(function (matched) {
+//                 if (matched) {
+//                     // req.session.user = results.id;
+//                     // req.session.name = results.name;
+//                     res.setHeader('Content-Type', 'application/json');
+//                     res.end(JSON.stringify(results));
+//                 } else {
+//                     res.status(434).send('Email/Password combination did not match')
+//                 }
+//             });
+//         }).catch((e) => {
+//             res.status(434).send('Email does not exist in the database')
+//         });
+//     } else {
+//         res.status(434).send('Both email and password is required to login')
+//     }
+    
+// });
+
+// router.post('/login',(req,res) => {
+//     sess = req.session;
+//     sess.email = req.body.email;
+//     res.end('done');
+// });
+
+// router.get('/admin',(req,res) => {
+//     sess = req.session;
+//     if(sess.email) {
+//         res.write(`<h1>Hello ${sess.email} </h1><br>`);
+//         res.end('<a href='+'/logout'+'>Logout</a>');
+//     }
+//     else {
+//         res.write('<h1>Please login first.</h1>');
+//         res.end('<a href='+'/'+'>Login</a>');
+//     }
+// });
+
+// router.get('/logout',(req,res) => {
+//     req.session.destroy((err) => {
+//         if(err) {
+//             return console.log(err);
+//         }
+//         res.redirect('/');
+//     });
+
+// });
+
+// app.use('/', router);
+// let run =function(){
+//     var email,pass;
+//     $("#submit").click(function(){
+//         email=$("#email").val();
+//         pass=$("#password").val();
+//         /*
+//         * Perform some validation here.
+//         */
+//         $.post("/login",{email:email,pass:pass},function(data){
+//             if(data==='done') {
+//                 window.location.href="/landing";
+//             }
+//         });
+//     });
+// };
 
 
 //ORDERS ***********
@@ -434,7 +467,7 @@ app.get('/api/users', function (req, res) {
 //GET a single user /working
 app.get('/api/users/:id', function (req, res) {
     let id = req.params.id;
-    db.one("SELECT * FROM posts users id=$1", [id])
+    db.one("SELECT * FROM users id=$1", [id])
         .then((results) => {
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(results));
@@ -462,9 +495,10 @@ app.put('/api/users/:id', function (req, res) {
         zip: req.body.zip
     };
     let query = "UPDATE users SET name=${name},email=${email},password=${password},address_line1=${address_line1},address_line2=${address_line2},city=${city},state=${state},zip=${zip} WHERE id=${id}";
+   console.log("good to go")
     db.one(query, data)
         .then((result) => {
-                    db.one("SELECT * FROM users WHERE categories.id=$1", [result.id])
+                    db.one("SELECT * FROM users WHERE id=$1", [result.id])
                         .then((results) => {
                             res.setHeader('Content-Type', 'application/json');
                             res.end(JSON.stringify(results));
@@ -624,6 +658,32 @@ app.delete('/api/deleteproduct', function (req, res) {
         res.status(434).send('unable to delete product')
     })
 });
+
+//products from other branch
+app.get('/api/products', function (req, res) {
+    
+    Products.findAll().then((results) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    }).catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving products');
+    })
+});
+
+app.get('/api/products/:id', function (req, res) {
+
+    let id = req.params.id;
+    
+    Products.findOne({ where: {id: id} }).then((results) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    }).catch(function (e) {
+        console.log(e);
+        res.status(434).send('error retrieving product info');
+    })
+});
+
 
 app.listen(3001);
 console.log('Ostrich is hungry and running, fast');
