@@ -48,6 +48,9 @@ const Category = CategoryModel(sequelize, Sequelize);
 const Reviews = ReviewsModel(sequelize, Sequelize);
 const OrderProduct = OrderProductsModel(sequelize, Sequelize);
 
+Orders.belongsTo(Users, {foreignKey: 'user_id'});
+Users.hasMany(Orders, {foreignKey: 'user_id'});
+
 const app = express();
 
 app.use(express());
@@ -103,18 +106,35 @@ app.get('/api/users/:id', function (req, res) {
     })
 });
 
+// app.put('/api/updateuser/:id', function (req, res) {
+//     let id = req.body.id
+    
+//     let data = {
+//             name: req.body.name,
+//             email: req.body.email,
+//             password: req.body.password,
+//             is_admin: req.body.is_admin,
+//             address_line1: req.body.address_line1,
+//             address_line2: req.address_line2,
+//             city: req.body.city,
+//             state: req.body.state,
+//             zip: req.body.zip
+//     };
+
+// Users.update(data, { where: { id: id } }).then(function (user) {
+//         res.setHeader('Content-Type', 'application/json');
+//         res.end(JSON.stringify(user));
+//     }).catch(function (e) {
+//         res.status(434).send('unable to update user')
+//     }).catch(function (e) {
+//         res.status(434).send('unable to find user')
+//     })
+// })
+
+
 app.delete('/api/deleteprofile/:id', (req, res) => {
 
 let userId = req.params.id
-
-// let id = users.filter(user => {
-//     return user.id == userId;
-// }) [0];
-
-// const index = users.indexOf(id)
-
-// users.splice(index, 1);
-// res.json({message: `User ${userID} deleted`});
 
     Users.destroy({ where: { id: userId } }).then(function (user) {
         res.setHeader('Content-Type', 'application/json');
@@ -163,24 +183,24 @@ app.post('/api/orders', function (req, res) {
 
 });
 
-app.get('/api/orders', function (req, res) {
+app.get('/api/orders/:id', function (req, res) {
 
-    let id = req.params.id;
-    db.query('SELECT * FROM orders JOIN users on orders.user_id = users.id WHERE users.id= orders.user_id')
-     .then(results => {
+    let userId = req.params.id
+
+    Orders.findAll({where: {user_id: userId}, include: [Users]}).then((results) => {
         res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify(results));
-               })
-    .catch(function (e) {
+        res.end(JSON.stringify(results));
+    }).catch(function(e) {
         console.log(e);
         res.status(434).send('error retrieving orders');
     })
-
 });
+
 
 
 //REGISTRATION ************
 // router.get('/register', function(req, res) {
+
 
     app.post('/api/register', function (req, res) {
         console.log(req.body)
